@@ -10,6 +10,9 @@ import Branch from '../models/branch.js';
 import DealerDetails from '../models/dealer_details.js';
 import UserWorkLocation from '../models/UserworkLocation.js';
 import States from '../models/States.js';
+import Bank from '../models/Bank.js';
+import predifine_remark from '../models/predifine_remark.js';
+import path from 'path';
 // Signup Controller
 
 
@@ -116,8 +119,9 @@ export const signup = async (req, res) => {
 
 
 export const login = async (req, res) => {
-  console.log(req.body)
+
   const {mobile_registered, password } = req.body;
+  
    
  
  
@@ -130,6 +134,7 @@ export const login = async (req, res) => {
   try {
     // Check if the user exists in the database using Sequelize
     const user = await User.findOne({ where: {  mobile_registered } });
+   
     
 
     
@@ -178,7 +183,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.user_id,   role: user.role_id, branch_id : Branchdata?.branch_id,  dealer_id :  Branchdata?. dealer_id },
       process.env.JWT_SECRET_KEY,  // Secret key for signing the token
-      { expiresIn: '2d' }  // Token expiration time (1 day in this case)
+      { expiresIn: '30d' }  // Token expiration time (1 day in this case)
     );
 
 
@@ -187,7 +192,9 @@ export const login = async (req, res) => {
     // Return a success response with the token
     res.status(200).json({
       message: 'Login successful',
-      token,  // Send the token to the client
+      token,
+      role_id : user.role_id
+        // Send the token to the client
       
      
     });
@@ -215,7 +222,6 @@ export const role = async (req, res) => {
           
         });
 
-     console.log("roles", roles)
 
         if (roles.length === 0) {
             return res.status(404).json({ message: 'No roles found for this responsibility' });
@@ -246,5 +252,59 @@ export const getAllStates = async (req, res) => {
     res.status(200).json(states);
   } catch (error) {
     res.status(500).json({ error: "Error fetching states", details: error.message });
+  }
+};
+
+export const getAllBank = async (req, res) => {
+  try {
+   
+    const Bankdata = await Bank.findAll();
+
+    res.status(200).json(Bankdata);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching states", details: error.message });
+  }
+};
+
+
+export const getpredifine_remark = async (req, res) => {
+  try {
+    
+    const  remarkData = await predifine_remark.findAll();
+
+    res.status(200).json(remarkData);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching states", details: error.message });
+  }
+};
+
+
+export const DocumentUploads = async (req, res) => {
+  try {
+    if (req.file) {
+      // Generate the file path
+      const filePath = path.join('/uploads', req.file.filename); // Relative path for client
+      
+      // Send a successful response with the file path
+      res.json({
+        success: true,
+        message: 'File uploaded successfully!',
+        path: filePath,
+      });
+    } else {
+      // No file provided in the request
+      res.status(400).json({
+        success: false,
+        message: 'No file uploaded!',
+      });
+    }
+  } catch (error) {
+    // Handle unexpected errors
+    console.error('Error during file upload:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while uploading the file.',
+      error: error.message,
+    });
   }
 };

@@ -6,12 +6,13 @@ import { createConnection } from './src/utils/db.js';
 import dotenv from 'dotenv'; 
 import cors from 'cors'; 
 import { sequelizedbconnection } from './src/services/sequelizedbcon.js';
-import { generateQuotationPDF } from './src/controllers/CustomerController.js';
+import { generateQuotationPDF2 } from './src/controllers/CustomerController.js';
+
 
 
 dotenv.config();
 
-// Create an instance of the app
+// Create an instance of the 
 const app = express();
 
 // Define the port the server will listen to
@@ -53,6 +54,8 @@ createConnection()
 app.use('/api/auth', authRoutes);
 app.use('/api/customer', customerRoutes);
 
+
+
 // Create a simple route
 app.get('/', (req, res) => {
   res.send('Hello, World!');
@@ -62,7 +65,18 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
 
   console.log(`Server is running on port ${PORT}`);
+
 });
 
 
+const quotationData = {
+  Pip_Name: "quotation_123.pdf",
+  Customer_Name: "John Doe",
+  Mobile: "9876543210",
+  Consultant_Name: "Jane Smith",
+  Contact_Number: "1234567890"
+};
+
+generateQuotationPDF2()
+// generateQuotationPDF2(quotationData);
 

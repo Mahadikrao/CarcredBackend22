@@ -9,7 +9,7 @@ import cloudinary from '../services/Cloudinary.js';
 
 export const createUserProfile = async (req, res) => {
 
-    console.log("req.body", req.body)
+    
     const { customer_name, address, phone_number, father_name, email, Aadhar, Pan } = req.body;
 
 

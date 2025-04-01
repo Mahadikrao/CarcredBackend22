@@ -13,6 +13,7 @@ import DealerDetails from '../models/dealer_details.js';
 import UserWorkLocation from '../models/UserworkLocation.js';
 
 import { sequelizedbconnection } from "../services/sequelizedbcon.js";
+import { users_aadhaar } from '../utils/DemoAadhardata.js';
 
 const sequelize = sequelizedbconnection();
 
@@ -52,7 +53,7 @@ export async function generateUniqueEnquiryId() {
     order: [["enquiry_id", "DESC"]],
   });
 
-  console.log(lastQuotation.enquiry_id)
+
   let nextNumber = 1; // Default if no records exist
 
   if (lastQuotation && lastQuotation.enquiry_id) {
@@ -60,7 +61,7 @@ export async function generateUniqueEnquiryId() {
 
 
     const lastNumber = parseInt(lastQuotation.enquiry_id.replace("ENQMCPL", ""), 10);
-    console.log(lastNumber)
+
 
     nextNumber = lastNumber + 1;
   }
@@ -451,7 +452,7 @@ export async function generateQuotationPDF(Data) {
 
 export const createEnquiry = async (req, res) => {
   try {
-    
+
 
 
     const uniqueId = await generateUniqueEnquiryId()
@@ -501,13 +502,13 @@ export const createEnquiry = async (req, res) => {
       vin_discount,
       vehicle_exchange_amt,
       final_on_road_price,
-      temporary_registration
+      temporary_registration,
+      color_name,
 
     } = req.body;
-    const data = req.body;
+    const data = req.body.CarAmounts;
+    const data2 = req.body;
 
-    console.log("data xxxx ++++++++++++++++++++++++++++++++++++++", data , "data xxxx +++++++++++++++++++++++++++++++++++++++++++++++++")
-      
 
     if (!first_name || !last_name || !mobile) {
       return res
@@ -528,6 +529,8 @@ export const createEnquiry = async (req, res) => {
       address,
       city,
       state,
+      branch_id: req.user?.branch_id,
+
 
       source,
       remark,
@@ -576,10 +579,11 @@ export const createEnquiry = async (req, res) => {
       vehicle_exchange_amt,
       final_on_road_price,
       created_by: req.user.id,
-      ...data
+      cardetail_id: data?.detail_id,
+      color: color_name,
 
     });
-    console.log("data", quotation,)
+
 
     res.status(201).json({
       message: "Enquiry and Quotation created successfully",
@@ -625,7 +629,7 @@ export const createEnquiry = async (req, res) => {
 //     WHERE enquiry1.created_by = 'USER000003' OR raw_quotation.created_by = 'USER000003';
 // `;
 
-   
+
 
 //     const userId = req.user.id;
 
@@ -670,6 +674,19 @@ export const createEnquiry = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const getEnquiry = async (req, res) => {
   try {
     const userId = req.user.id; // Get logged-in user ID dynamically
@@ -681,13 +698,14 @@ export const getEnquiry = async (req, res) => {
     const query = `
       SELECT * FROM enquiry1 
       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+      LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
+      LEFT JOIN car_model ON   raw_quotation.model_id = car_model.model_id
       WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
+      ORDER BY enquiry_date DESC 
+      
 
-      UNION
-
-      SELECT * FROM enquiry1 
-      RIGHT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
-      WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
+    
+      
       LIMIT :limit OFFSET :offset;
     `;
 
@@ -737,6 +755,7 @@ export const getEnquiry = async (req, res) => {
 export const generatePip = async (req, res) => {
   try {
     const { model_id } = req.body; // Extract model_id from request body
+     console.log(req.body)
 
     const responseData = await car_detail.findAll({
       where: { model_id: model_id },
@@ -766,45 +785,204 @@ export const generatePip = async (req, res) => {
 
 
 
+export const getDashboardData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+
+    // Get today's date
+    const today = new Date();
+    const todayFormatted = today.toISOString().slice(0, 10); // YYYY-MM-DD format
+
+    // Get the previous month's date
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1); // Go back one month
+    const lastMonthFormatted = lastMonth.toISOString().slice(0, 10); // YYYY-MM-DD format
+
+
+
+    // Query for enquiries created today (FTD)
+    const queryForTodayEnquiries = `
+      SELECT * 
+      FROM enquiry1 
+      WHERE created_by = :userId 
+        AND DATE(enquiry_date) = :todayFormatted;
+    `;
+
+    // Query for enquiries created between today and last month (FTD)
+    const queryForLastMonthEnquiries = `
+      SELECT * 
+      FROM enquiry1 
+      WHERE created_by = :userId 
+        AND DATE(enquiry_date) BETWEEN :lastMonthFormatted AND :todayFormatted;
+    `;
+
+    // Query for loan details created today (FTD)
+    const queryForTodayLoanDetails = `
+      SELECT * 
+      FROM loan_detail 
+      WHERE created_by = :userId 
+        AND DATE(date) = :todayFormatted;
+    `;
+
+    // Query for loan details created between today and last month (MTD)
+    const queryForLastMonthLoanDetails = `
+      SELECT * 
+      FROM loan_detail 
+      WHERE created_by = :userId 
+        AND DATE(date) BETWEEN :lastMonthFormatted AND :todayFormatted;
+    `;
+
+    // Query for loan details with specific statuses created between today and last month (Processing, Open)
+    const queryForProcessingOpenLoansMonths = `
+      SELECT * 
+      FROM loan_detail 
+      WHERE created_by = :userId 
+        AND (loan_status IN ('SUBMITTED TO BANK', 'PROCESSING', 'FILE COMPLETE', 
+                             'CRM LOGIN ENTRY', 'RISK CONTAINMENT UNIT', 
+                             'DATA ENTRY', 'UNDERWRITING', 'CREDIT RUN', 'QUERY'))
+        AND DATE(date) BETWEEN :lastMonthFormatted AND :todayFormatted
+        AND branch_id IN (
+          SELECT location_id 
+          FROM user_work_location 
+          WHERE user_id = :userId
+        );
+    `;
+
+    // Query for loan details with specific statuses created today (Processing, Open)
+    const queryForProcessingOpenLoanToday = `
+      SELECT * 
+      FROM loan_detail 
+      WHERE created_by = :userId 
+        AND (loan_status IN ('SUBMITTED TO BANK', 'PROCESSING', 'FILE COMPLETE', 
+                             'CRM LOGIN ENTRY', 'RISK CONTAINMENT UNIT', 
+                             'DATA ENTRY', 'UNDERWRITING', 'CREDIT RUN', 'QUERY'))
+        AND DATE(date) = :todayFormatted
+        AND branch_id IN (
+          SELECT location_id 
+          FROM user_work_location 
+          WHERE user_id = :userId
+        );
+    `;
+
+
+
+
+    const queryApproveLoanToday = `
+   SELECT * 
+FROM loan_detail 
+WHERE (loan_status = 'APPROVED' 
+       OR loan_status = 'VIN ALLOTED' 
+       OR loan_status = 'PRE-DISBURSEMENT' 
+       OR loan_status = 'DELIVERY ORDER' 
+       OR loan_status = 'DISBURSEMENT') 
+  AND DATE(date) = :todayFormatted
+  AND branch_id IN (
+    SELECT location_id 
+    FROM user_work_location 
+    WHERE user_id = '$userID'
+  );
+
+  `
+
+
+    const queryApproveLoanMonth = `
+   SELECT * 
+FROM loan_detail 
+WHERE (loan_status = 'APPROVED' 
+       OR loan_status = 'VIN ALLOTED' 
+       OR loan_status = 'PRE-DISBURSEMENT' 
+       OR loan_status = 'DELIVERY ORDER' 
+       OR loan_status = 'DISBURSEMENT') 
+  AND DATE(date) = :todayFormatted
+  AND branch_id IN (
+    SELECT location_id 
+    FROM user_work_location 
+    WHERE user_id = '$userID'
+  );
+
+  `
+
+
+
+
+
+    // Execute the query for enquiries created today
+    const enquiriesToday = await sequelize.query(queryForTodayEnquiries, {
+      replacements: { userId, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for enquiries created between today and last month
+    const enquiriesLastMonth = await sequelize.query(queryForLastMonthEnquiries, {
+      replacements: { userId, lastMonthFormatted, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for loan details created today
+    const loanDetailsToday = await sequelize.query(queryForTodayLoanDetails, {
+      replacements: { userId, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for loan details created between today and last month
+    const loanDetailsLastMonth = await sequelize.query(queryForLastMonthLoanDetails, {
+      replacements: { userId, lastMonthFormatted, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for processing/open loans created between today and last month
+    const processingOpenLoansMonths = await sequelize.query(queryForProcessingOpenLoansMonths, {
+      replacements: { userId, lastMonthFormatted, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for processing/open loans created today
+    const processingOpenLoansToday = await sequelize.query(queryForProcessingOpenLoanToday, {
+      replacements: { userId, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Combine or process the data as required, for example, by sending it as a response
+    const ApproveLoanToday = await sequelize.query(queryApproveLoanToday, {
+      replacements: { userId, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Execute the query for processing/open loans created today
+    const ApproveLoanMonth = await sequelize.query(queryApproveLoanMonth, {
+
+      replacements: { userId, lastMonthFormatted, todayFormatted },
+      type: sequelize.QueryTypes.SELECT,
+    });
 
 
 
 
 
 
+    const data = {
+      enquiriesToday: enquiriesToday?.length || 0,
+      enquiriesLastMonth: enquiriesLastMonth?.length || 0,
+      loanDetailsToday: loanDetailsToday?.length || 0,
+      loanDetailsLastMonth: loanDetailsLastMonth?.length || 0,
+      processingOpenLoansMonths: processingOpenLoansMonths?.length || 0,
+      processingOpenLoansToday: processingOpenLoansToday?.length || 0,
+      ApproveLoanToday: ApproveLoanToday?.length || 0,
+      ApproveLoanMonth: ApproveLoanMonth?.length || 0,
+    };
+
+    res.json(data);
+
+  } catch (error) {
+    console.log("Error:", error);
+    res.status(500).json({ message: "An error occurred while fetching data." });
+  }
+};
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// export const BranchDetails = async (req, res) => {
-//   try {
-
-//     const userLocation = await UserDealerLocation.findOne({
-//       where: { user_id:  req.user.id },
-//     });
-
-//    const Branchdata = await Branch.findOne({where : {dealer_id : userLocation.dealer_id}})
-
-
-//    const BranchdataAll = await DealerDetails.findOne({where : {dealer_id : Branchdata.dealer_id}})
-
-//     return res.status(200).json({...BranchdataAll, ...userLocation ,...Branchdata });
-//   } catch (error) {
-//     console.error("Error fetching branch details:", error);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
 
 export const BranchDetails = async (req, res) => {
   try {
@@ -847,3 +1025,475 @@ export const BranchDetails = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+export const AadhharCard = async (req, res) => {
+  try {
+    const { user_aadhaar_number } = req.body
+
+    const user = users_aadhaar.find((user) => user.result.user_aadhaar_number === user_aadhaar_number.toString());
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Respond with the user's Aadhaar details
+    return res.status(200).json({ success: true, data: user });
+
+  } catch (error) {
+    console.log("error", error)
+  }
+}
+
+
+
+
+
+
+
+
+
+
+export async function generateQuotationPDF2() {
+  const tempDir = "temp";
+  fs.mkdirSync(tempDir, { recursive: true });
+
+  const outputPath = path.join("outputs", "Quotation33.pdf");
+
+  if (!fs.existsSync("outputs")) {
+    fs.mkdirSync("outputs", { recursive: true });
+  }
+
+  const doc = new PDFDocumentWithTables({ size: "A4", margin: 20 });
+  const stream = fs.createWriteStream(outputPath);
+  doc.pipe(stream);
+
+  const priceDetails = [
+    { label: "Ex-Showroom Price", value: "480100" },
+
+    { label: "Registration Charges", value: "50809" },
+    ,
+    { label: "Motor Insurance", value: "26825" },
+
+    { label: "Add On Cover", value: "4200" },
+
+    { label: "Logistics/Handling Charge", value: "10000" },
+
+    { label: "Essential Kit/Accessories", value: "3090" },
+
+    { label: "Extended Warranty", value: "5852" },
+    { label: "AMC", value: "0" },
+    { label: "Temporary Registration", value: "0" },
+    { label: "Fast Tag", value: "0" },
+
+    { label: "Number Plate", value: "0" },
+
+    { label: "TCS @ 1%", value: "0" },
+
+    { label: "VAS", value: "10000" },
+
+    { label: "Installation Charge", value: "0" },
+  ];
+
+  const items = [
+    { label: "(+) Other Charge", value: "0" },
+  ,
+    { label: "(-) Car Exchange Amount", value: "0" },
+   
+    { label: "(-) Vin Discount", value: "0" },
+  
+    { label: "(-) Cash Discount", value: "0" },
+  ];
+  
+
+
+  try {
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+    const borderMargin = 20;
+
+    doc.rect(borderMargin, borderMargin, pageWidth - 2 * borderMargin, pageHeight - 2 * borderMargin)
+      .lineWidth(1) // Border thickness
+      .strokeColor("black") // Border color
+      .stroke();
+
+    doc.y = 20;
+
+
+    doc.moveDown(0.5);
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(16)
+      .text(data.deal_name, { align: "center" })
+      .moveDown(0.2);
+
+
+
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(data.addressbranch, { align: "center", lineGap: 3, });
+
+    doc
+      .text(
+        `${data.contact_number}, ${data.contact_number_alt}, GSTN: ${data.gst_number}`,
+        { align: "center", lineGap: 3, }
+      )
+      .text(`Email: ${data.emailbranch} | Website: ${data.website}`, {
+        align: "center",
+        lineGap: 3,
+      })
+      .moveDown(0.1);
+
+    // 🔹 Add Another Static Line
+
+
+    // Add logo (top-right corner)
+    // if (data.logo) {
+    //   doc.image(data.logo, doc.page.width - 60, 20, { width: 40 });
+    // }
+
+    // Draw a border around the header
+    doc
+      .rect(20, 20, doc.page.width - 40, 80) // Increased height for extra text
+      .lineWidth(1)
+      .strokeColor("black")
+      .stroke();
+
+    doc.moveDown(0.8);
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(14)
+      .text("Product Information Page", { align: "center" })
+
+    doc.moveDown(0.1);
+
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+    const centerX = pageWidth / 2;
+
+    doc
+      .moveTo(centerX, doc.y) // Start point at center of the page
+      .lineTo(centerX, doc.y + 420) // Extend the line downward
+      .stroke(); // Apply stroke to render the line
+    doc.moveDown(1);
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+
+
+    // Customer and Consultant Details
+    const customerDetailsY = doc.y;
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Customer Details:", 25, customerDetailsY - 12)
+      .moveDown(0.4)
+      .font("Helvetica-BoldOblique")
+
+      .text(`Customer Name : Mr SHAURYA RAO `, 25)
+
+      .moveDown(0.2)
+      .text("Address : Raipur, CHHATTISGARH", 25,)
+      .moveDown(0.2)
+      .text("Email : Carcred7667@gmail.com", 25)
+      .moveDown(0.2)
+      .text(`Mobile : 8878332000`, 25)
+
+    doc.moveDown(0.2)
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Bank Details :", 300, customerDetailsY - 12)
+      .moveDown(0.4)
+      .font("Helvetica-BoldOblique")
+      .text(`Account Name : MAHADEVA CARS PRIVATE LIMITED`, 300)
+      .moveDown(0.2)
+      .text(`Account No : 916030050287308`, 300)
+      .moveDown(0.2)
+      .text(`Bank Name : AXIS BANK LTD`, 300)
+
+      .moveDown(0.2)
+      .text(`IFSC Code : UTIB0000726`, 300)
+
+
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+    doc.moveDown(1.5)
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+
+    const consultantDetailsY = doc.y;
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Customer Details : SHWETA MEHRA", 25, consultantDetailsY - 12)
+
+    doc.moveDown(0.2)
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Mobile Number : 8878332000", 300, consultantDetailsY - 12)
+
+    doc.moveDown(1.5)
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+
+    const consultantDetailsY1 = doc.y;
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Model Details", 25, consultantDetailsY1 - 12)
+
+    doc.moveDown(3)
+    
+    doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text(`Model : KWID `, 25)
+
+    .moveDown(0.2)
+    .text("Varient: RXE MT 6.2 2024", 25,)
+    .moveDown(0.2)
+    .text(`Color :  ELECTRIC BLUE`, 25)
+
+    doc.moveDown(3)
+
+     
+ 
+    // doc.font("Helvetica-Bold").fontSize(10).text("(+) Other Charge", 300, doc.y);
+
+    // Print the value on the right
+
+
+
+    doc
+    .moveTo(20, doc.y)
+    .lineTo(300, doc.y)
+    .lineWidth(1)
+    .strokeColor("black")
+    .stroke();
+    doc.moveDown(3)
+
+ 
+    doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text(`Exchange Car Detail`, 25)
+
+    doc.moveDown(3)
+
+    
+    doc
+    .moveTo(20, doc.y+10)
+    .lineTo(296, doc.y+10)
+    .lineWidth(1)
+    .strokeColor("black")
+    .stroke();
+    doc.moveDown(1)
+
+    doc
+    .moveTo(150, doc.y-3)
+    .lineTo(150, doc.y+72)
+    .stroke();
+
+
+  doc.moveDown(0.5)
+items.forEach((item) => {
+    
+  doc.font("Helvetica-Bold").fontSize(10).text(item.label, 24, doc.y);
+  doc.font("Helvetica-Bold").fontSize(10).text(item.value, 160, doc.y - 10);
+
+  // Draw a line below each entry
+if(item.label!=="(-) Cash Discount")  
+{  doc
+    .moveTo(20, doc.y)
+    .lineTo(296, doc.y)
+    .lineWidth(1)
+    .strokeColor("black")
+    .stroke();
+    doc.moveDown(0.5)}
+});
+    
+
+
+  
+  
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Particulars", 300, consultantDetailsY1 - 12)
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("Amount", 500, consultantDetailsY1 - 12)
+
+    const leftX = 430
+
+    doc
+      .moveTo(leftX, doc.y)
+      .lineTo(leftX, doc.y + 282)
+      .stroke();
+    doc.moveDown(1);
+
+
+    priceDetails.map((item) => {
+      // Print the label
+      doc.font("Helvetica-Bold").fontSize(10).text(item.label, 300, doc.y);
+
+      // Print the value on the right
+      doc.font("Helvetica-Bold").fontSize(10).text(item.value, 432, doc.y - 10);
+
+      // Draw a line below each entry
+      doc
+        .moveTo(430, doc.y)
+        .lineTo(doc.page.width - 20, doc.y)
+        .lineWidth(1)
+        .strokeColor("black")
+        .stroke();
+      {
+        item.label !== "Installation Charge" ? doc.moveDown(0.5) : ''
+
+      }
+
+    });
+ 
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+      doc.moveDown(1)
+
+
+      doc.font("Helvetica-Bold").fontSize(12).text("ON-ROAD PRICE", 300, doc.y, { continued: true });
+      doc.text("590876", 432, doc.y);
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+
+      doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+      doc.moveDown(0.4)
+
+
+      doc.font("Helvetica-Bold").fontSize(12).text("Amount In Words : Five Lakh Ninty Thousand Eight Hundred & Seventy Six ", 30, doc.y, );
+    
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+      doc.font("Helvetica-Bold").fontSize(10).text("Terms & Conditions:", 30, doc.y + 20);
+      doc.moveDown(); // Adds space below the heading
+      
+      doc.font("Helvetica").fontSize(8);
+      
+      const terms = [
+        "1) Price and statutory levies at the time of delivery are as applicable irrespective of when the initial payment is made.",
+        "2) Vehicle will be delivered only after realization of full and final payment.",
+        "3) This is not an order form and no claim for priority can be made on the basis of this quotation.",
+        "4) This quotation is applicable only for the day of issuance.",
+        "5) All the matters/issues (if any) shall be subjected to the exclusive jurisdiction of the competent courts in the State of the Dealer with whom the booking is made.",
+        "6) Ex-showroom/insurance price may vary due to any offer from Dealer/Market conditions from time to time.",
+        "7) TCS @ 1% applicable if Ex-Showroom Price is above INR 10 lac.",
+        "8) Warranty applicable as per manufacturer terms and conditions.",
+        "9) The aforementioned prices are tentative in nature and subject to change."
+      ];
+      
+      terms.forEach((term) => {
+        doc.text(term, { width: 550, align: "left" });
+        doc.moveDown(0.5); // Adds spacing between each line
+      });
+      doc.font("Helvetica-Bold").fontSize(25).fillColor("gray").opacity(0.3)
+      .rotate(-45, { origin: [doc.page.width / 2, doc.page.height / 2] })
+      .text("NOT FOR BANK LOGIN AND FINANCE", 40, doc.page.height / 2, { align: "center" }).opacity(1).rotate(0);
+
+
+
+
+
+    
+
+
+
+
+
+
+   
+
+
+ 
+
+
+    doc.end();
+    stream.on("finish", () => console.log(`✅ PDF saved successfully at: ${outputPath}`));
+  } catch (error) {
+    console.error("❌ Error generating PDF:", error);
+  }
+}
+
+
+
+

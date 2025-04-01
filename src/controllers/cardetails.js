@@ -136,8 +136,7 @@ export const getCarColor = async (req, res) => {
 export const getVarients = async (req, res) => { 
     try {
         const { model_id, transmission_type } = req.query; // Extract from query parameters
-         console.log(req.query)
-
+        
         if (!model_id || !transmission_type) {
             return res.status(400).json({ message: "model_id and transmission_type are required" });
         }
@@ -163,7 +162,7 @@ export const getVarients = async (req, res) => {
 export const modelvarientdetails = async (req, res) => { 
     try {
         const {fuel_type, transmission_type, model_id} = req.query; 
-        console.log(req.query)
+       
         
 
         if (!fuel_type || !transmission_type) {
@@ -191,7 +190,7 @@ export const modelvarientdetails = async (req, res) => {
 export const modelTypes = async (req, res) => { 
     try {
         const {model_id} = req.query; 
-        console.log(req.query)
+    
         
 
  

@@ -131,7 +131,7 @@ export const processOCR =  async(req, res) => {
   });
 
   pdfParser.on("pdfParser_dataReady", (pdfData) => {
-      console.log(pdfData)
+   
     let extractedText = pdfData.Pages.flatMap((page) =>
       page.Texts.map((textObj) =>
         decodeURIComponent(textObj.R.map((r) => r.T).join(" "))
