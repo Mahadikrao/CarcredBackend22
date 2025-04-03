@@ -5,7 +5,7 @@ import multer from 'multer';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { processOCR } from '../controllers/ocr.js';
 import { CarColor, CarDetails, createCarVariant, getCarColor, getCarmodel, getVarients, modelTypes, modelvarientdetails } from '../controllers/cardetails.js';
-import { BranchDetails } from '../controllers/CustomerController.js';
+import { BranchDetails, getVinByCreatedBy } from '../controllers/CustomerController.js';
 import path from 'path';
 const storage = multer.memoryStorage(); // Store files in memory as Buffer
 const upload = multer({ storage: storage });
@@ -62,13 +62,20 @@ router.post('/getcarcolor', verifyToken,  getCarColor);
 
 
 router.get('/getvarients', verifyToken, getVarients);
+
 router.get('/modelvarientdetails', verifyToken,  modelvarientdetails);
+
 router.get('/modelTypes', verifyToken,  modelTypes);
 
 router.get('/states', verifyToken,  getAllStates);
 
 router.get('/bank', verifyToken,  getAllBank);
+
 router.get('/getpredifine_remark', verifyToken,  getpredifine_remark);
+
+
+
+router.get('/getvinbycreatedby', verifyToken,  getVinByCreatedBy);
 
 router.post('/Documentuploads', verifyToken, upload1.single('file'), DocumentUploads);
 

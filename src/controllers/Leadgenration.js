@@ -83,7 +83,7 @@ export async function generateUniqueEnquiryIdlone(prefix = "ENQMCPL") {
 
 export const createLoanDetail = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log("new============", req.body,   "new============")
     const sequelize = sequelizedbconnection();
 
     const transaction = await sequelize.transaction();
@@ -223,7 +223,15 @@ export const createLoanDetail = async (req, res) => {
       quotation_Id,
       bank_name,
       bank_name2, 
-      enquiry_id
+      enquiry_id,
+      alternate_number,
+      user_gender,
+      name_prefix,
+      booking_amt,
+      date_of_birth,
+      source_remark,
+      booking_receipt_no,
+    
       
 
     } = req.body;
@@ -248,10 +256,21 @@ export const createLoanDetail = async (req, res) => {
     // Create Enquiry
     const enquiry = await LeadEnquiry.create({
       ...data,
-      title,
+      name_prefix,
+      booking_amt,
+      date_of_birth,
+      color_id,
+    
+      booking_receipt_no,
+
+      branch_id   : req.user?.branch_id,
+      dealer_id : req.user?.dealer_id,
+     
       first_name,
       last_name,
       mobile,
+      alternate_number,
+      gender  :  user_gender=== "M" ? "Male" : "Female", 
       email,
       address,
       city,
@@ -334,11 +353,12 @@ export const createLoanDetail = async (req, res) => {
       name : first_name + last_name,
 
       mobile,
+      alternate_number,
 
 
       booking_id,
       payment_method,
-      preferred_bank,
+      preferred_bank : bank_name,
       emi_status,
       no_of_emi,
       emi_amount,

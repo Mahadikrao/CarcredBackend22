@@ -14,20 +14,21 @@ import UserWorkLocation from '../models/UserworkLocation.js';
 
 import { sequelizedbconnection } from "../services/sequelizedbcon.js";
 import { users_aadhaar } from '../utils/DemoAadhardata.js';
+import VinDetails from '../models/Vindetails.js';
 
 const sequelize = sequelizedbconnection();
 
 
 
 const cars = [
-  { color: "ELECTRIC BLUE", image: "https://shorturl.at/iv6Eu" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://shorturl.at/iv6Eu" },
-  { color: "ELECTRIC BLUE", image: "https://shorturl.at/iv6Eu" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://shorturl.at/iv6Eu" },
-  { color: "ELECTRIC BLUE", image: "https://shorturl.at/iv6Eu" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://shorturl.at/iv6Eu" },
-  { color: "ELECTRIC BLUE", image: "https://shorturl.at/iv6Eu" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://shorturl.at/iv6Eu" },
+  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
 
 ];
 
@@ -38,7 +39,10 @@ const cars = [
 
 
 const downloadImage = async (url, filename) => {
-  const response = await axios({ url, responseType: "arraybuffer" });
+  const response = await axios({
+    url,
+    responseType: "arraybuffer"
+  });
   fs.writeFileSync(filename, response.data);
   return filename;
 };
@@ -300,7 +304,7 @@ export async function generateQuotationPDF(Data) {
       }
 
       const localImagePath = path.join("temp", `car_${i}.png`);
-      await downloadImage(cars[i].image, localImagePath);
+
 
       // Draw table cell (Border around each item)
       doc
@@ -687,6 +691,265 @@ export const createEnquiry = async (req, res) => {
 
 
 
+// export const getEnquiry = async (req, res) => {
+//   try {
+//     const userId = req.user.id; // Get logged-in user ID dynamically
+//     const limit = parseInt(req.query.limit) || 1;
+//     const page = parseInt(req.query.page) || 1;
+//     const offset = (page - 1) * limit;
+
+//     // Raw SQL query with dynamic userId
+//     // const query = `
+//     //   SELECT * FROM enquiry1 
+//     //   LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//     //   LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
+//     //   LEFT JOIN car_model ON   raw_quotation.model_id = car_model.model_id
+//     //   WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
+
+//     //   AND ( enquiry1.first_name LIKE "om" OR enquiry1.mobile LIKE " ")
+//     //   ORDER BY enquiry_date DESC 
+//     //   LIMIT :limit OFFSET :offset;
+//     // `;
+
+//      const query = ` SELECT * FROM enquiry1 
+//       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//       LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
+//       LEFT JOIN car_model ON raw_quotation.model_id = car_model.model_id
+//       WHERE (enquiry1.created_by = "USER000003" OR raw_quotation.created_by = "USER000003")
+//       AND ( enquiry1.first_name LIKE " " OR enquiry1.mobile LIKE " ")
+
+//       ORDER BY enquiry_date DESC 
+
+//       LIMIT :limit OFFSET :offset;
+//      `
+
+//     // Execute raw query using Sequelize
+//     const enquiries = await sequelize.query(query, {
+//       replacements: { userId, limit, offset },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     // Count total records (without LIMIT & OFFSET)
+//     const countQuery = `
+//       SELECT COUNT(*) as total FROM (
+//         SELECT enquiry1.enquiry_id FROM enquiry1 
+//         LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//         WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
+//         UNION
+//         SELECT enquiry1.enquiry_id FROM enquiry1 
+//         RIGHT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//         WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
+//       ) AS combinedData;
+//     `;
+
+//     const totalCountResult = await sequelize.query(countQuery, {
+//       replacements: { userId },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     const totalEnquiries = totalCountResult[0]?.total || 0;
+//     const totalPages = Math.ceil(totalEnquiries / limit);
+
+//     res.status(200).json({
+//       totalEnquiries,
+//       totalPages,
+//       currentPage: page,
+//       enquiries,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching enquiries:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
+
+// export const getEnquiry = async (req, res) => {
+//   try {
+//     const userId = req.user.id; // Get logged-in user ID dynamically
+//     const limit = parseInt(req.query.limit) || 1;
+//     const page = parseInt(req.query.page) || 1;
+//     const offset = (page - 1) * limit;
+
+//     const { firstName, mobile, startDate , endDate, enquiry_status} = req.query; // Get query params for first_name and mobile
+
+//     // Dynamically build the WHERE condition for first_name and mobile
+//     let searchCondition = '';
+
+//     let DateFilter = '';
+
+//     if (firstName) {
+//       searchCondition = `AND (enquiry1.first_name LIKE :firstName)`;
+//     }
+
+
+
+//      if(mobile){
+
+//       searchCondition = `AND (enquiry1.mobile LIKE :mobile)`;
+//     }
+
+
+//     if(startDate && endDate ){
+
+//     DateFilter = `AND enquiry1.enquiry_date BETWEEN :startDate AND :endDate`
+
+//     }
+
+//      let Status = ""
+
+//     if(enquiry_status){
+//       Status = `WHERE enquiry_status : enquiry_status`
+
+//     }
+
+
+
+
+//     // Raw SQL query with dynamic userId and dynamic search conditions
+//     const query = `
+//       SELECT * FROM enquiry1 
+//       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//       LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
+//       LEFT JOIN car_model ON raw_quotation.model_id = car_model.model_id
+//       WHERE (enquiry1.created_by = :userId OR raw_quotation.created_by = :userId)
+//       ${searchCondition}
+//       ${DateFilter}
+//        ${Status}
+//       ORDER BY enquiry_date DESC
+//       LIMIT :limit OFFSET :offset;
+//     `;
+
+//     // Execute raw query using Sequelize
+//     const enquiries = await sequelize.query(query, {
+//       replacements: {
+//         userId,
+//         firstName: `%${firstName || ''}%`, // Default to empty string if not provided
+//         mobile: `%${mobile || ''}%`,       // Default to empty string if not provided
+//         startDate: startDate || null,      // Ensure null if not provided
+//         endDate: endDate || null,   
+//         enquiry_status: enquiry_status || null,        // Ensure null if not provided
+//         limit,
+//         offset
+//       },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     // Count total records (without LIMIT & OFFSET)
+//     const countQuery = `
+//       SELECT COUNT(*) as total FROM enquiry1
+//       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//       WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId;
+//     `;
+
+//     const totalCountResult = await sequelize.query(countQuery, {
+//       replacements: { userId },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     const totalEnquiries = totalCountResult[0]?.total || 0;
+//     const totalPages = Math.ceil(totalEnquiries / limit);
+
+//     res.status(200).json({
+//       totalEnquiries,
+//       totalPages,
+//       currentPage: page,
+//       enquiries,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching enquiries:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
+// export const getEnquiry = async (req, res) => {
+//   try {
+//     const userId = req.user.id; // Get logged-in user ID dynamically
+//     const limit = parseInt(req.query.limit) || 10;
+//     const page = parseInt(req.query.page) || 1;
+//     const offset = (page - 1) * limit;
+
+//     const { Search, startDate, endDate, enquiry_status } = req.query;
+
+//     let searchCondition = '';  // Condition for firstName and mobile
+//     let DateFilter = '';       // Condition for date range
+//     let statusCondition = '';  // Condition for enquiry status
+
+//     // Handle firstName filter
+//     if (Search) {
+//       searchCondition += `AND enquiry1.first_name LIKE :firstName OR  enquiry1.mobile LIKE :mobile `;
+//     }
+
+
+
+//     // Handle date range filter
+//     if (startDate && endDate) {
+//       DateFilter = `AND enquiry1.enquiry_date BETWEEN :startDate AND :endDate `;
+//     }
+
+//     // Handle enquiry status filter
+//     if (enquiry_status) {
+//       statusCondition = `AND enquiry1.enquiry_status = :enquiry_status `;
+//     }
+
+//     // Raw SQL query with dynamic userId and dynamic search conditions
+//     const query = `
+//       SELECT * FROM enquiry1 
+//       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//       LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
+//       LEFT JOIN car_model ON raw_quotation.model_id = car_model.model_id
+//       WHERE (enquiry1.created_by = :userId OR raw_quotation.created_by = :userId)
+//       ${searchCondition} 
+//       ${DateFilter} 
+//       ${statusCondition}
+//       ORDER BY enquiry_date DESC
+//       LIMIT :limit OFFSET :offset;
+//     `;
+
+//     // Execute raw query using Sequelize
+//     const enquiries = await sequelize.query(query, {
+//       replacements: {
+//         userId,
+//         Search: `%${Search || ''}%`,  // Default to empty string if not provided
+
+//         startDate: startDate || null,       // Ensure null if not provided
+//         endDate: endDate || null,           // Ensure null if not provided
+//         enquiry_status: enquiry_status || null, // Ensure null if not provided
+//         limit,
+//         offset
+//       },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     // Count total records (without LIMIT & OFFSET)
+//     const countQuery = `
+//       SELECT COUNT(*) as total FROM enquiry1
+//       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+//       WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId;
+//     `;
+
+//     const totalCountResult = await sequelize.query(countQuery, {
+//       replacements: { userId },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     const totalEnquiries = totalCountResult[0]?.total || 0;
+//     const totalPages = Math.ceil(totalEnquiries / limit);
+
+//     res.status(200).json({
+//       totalEnquiries,
+//       totalPages,
+//       currentPage: page,
+//       enquiries,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching enquiries:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
 export const getEnquiry = async (req, res) => {
   try {
     const userId = req.user.id; // Get logged-in user ID dynamically
@@ -694,42 +957,83 @@ export const getEnquiry = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
 
-    // Raw SQL query with dynamic userId
+    const { Search, startDate, endDate, enquiry_status } = req.query;
+
+    // enquiry_status?.join(',').split(',')
+
+
+    console.log("req.query --------------------------------------------------------------------", req.query)
+
+    let searchCondition = '';  // Condition for firstName and mobile
+    let DateFilter = '';       // Condition for date range
+    let statusCondition = '';  // Condition for enquiry status
+
+    // Handle Search filter for firstName and mobile
+    if (Search) {
+      searchCondition = `AND (enquiry1.first_name LIKE :Search OR enquiry1.mobile LIKE :Search)`;
+    }
+
+    // Handle date range filter
+    if (startDate && endDate && startDate !== 'null' && endDate !== 'null') {
+      DateFilter = `AND enquiry1.enquiry_date BETWEEN :startDate AND :endDate `;
+    }
+
+    // Handle enquiry status filter
+    if (enquiry_status && Array.isArray(enquiry_status) && enquiry_status.length > 0 && enquiry_status[0] !== '') {
+      statusCondition = `AND enquiry1.enquiry_status IN (:enquiry_status)`;
+    }
+
+    console.log("enquiry_status", enquiry_status)
+
+
+    // Raw SQL query with dynamic userId and dynamic search conditions
     const query = `
       SELECT * FROM enquiry1 
       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
       LEFT JOIN car_detail ON raw_quotation.cardetail_id = car_detail.detail_id
-      LEFT JOIN car_model ON   raw_quotation.model_id = car_model.model_id
-      WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
-      ORDER BY enquiry_date DESC 
-      
-
-    
-      
+      LEFT JOIN car_model ON raw_quotation.model_id = car_model.model_id
+      WHERE (enquiry1.created_by = :userId OR raw_quotation.created_by = :userId)
+      ${searchCondition} 
+      ${DateFilter} 
+      ${statusCondition}
+      ORDER BY enquiry_date DESC
       LIMIT :limit OFFSET :offset;
     `;
 
+    console.log("query----------------------------------", query)
+
     // Execute raw query using Sequelize
     const enquiries = await sequelize.query(query, {
-      replacements: { userId, limit, offset },
+      replacements: {
+        userId,
+        Search: `%${Search || ''}%`,  // Default to empty string if not provided
+        startDate: startDate || null, // Ensure null if not provided
+        endDate: endDate || null,     // Ensure null if not provided
+        enquiry_status: enquiry_status?.join(',').split(',') || null, // Ensure null if not provided
+        limit,
+        offset
+      },
       type: sequelize.QueryTypes.SELECT,
     });
 
-    // Count total records (without LIMIT & OFFSET)
+    // Count total records (without LIMIT & OFFSET) with dynamic conditions
     const countQuery = `
-      SELECT COUNT(*) as total FROM (
-        SELECT enquiry1.enquiry_id FROM enquiry1 
-        LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
-        WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
-        UNION
-        SELECT enquiry1.enquiry_id FROM enquiry1 
-        RIGHT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
-        WHERE enquiry1.created_by = :userId OR raw_quotation.created_by = :userId
-      ) AS combinedData;
+      SELECT COUNT(*) as total FROM enquiry1
+      LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
+      WHERE (enquiry1.created_by = :userId OR raw_quotation.created_by = :userId)
+      ${searchCondition}
+      ${DateFilter}
+      ${statusCondition};
     `;
 
     const totalCountResult = await sequelize.query(countQuery, {
-      replacements: { userId },
+      replacements: {
+        userId,
+        Search: `%${Search || ''}%`,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        enquiry_status: enquiry_status || null
+      },
       type: sequelize.QueryTypes.SELECT,
     });
 
@@ -752,10 +1056,16 @@ export const getEnquiry = async (req, res) => {
 
 
 
+
+
+
 export const generatePip = async (req, res) => {
   try {
-    const { model_id } = req.body; // Extract model_id from request body
-     console.log(req.body)
+
+    console.log("req----", req.body);
+
+    const { model_id, } = req.body; // Extract model_id from request body
+
 
     const responseData = await car_detail.findAll({
       where: { model_id: model_id },
@@ -769,7 +1079,7 @@ export const generatePip = async (req, res) => {
 
     table.datas = responseData
 
-    // Call generateQuotationPDF and store its response
+
     const pdfResponse = await generateQuotationPDF(req.body);
 
     // Send response
@@ -1054,11 +1364,16 @@ export const AadhharCard = async (req, res) => {
 
 
 
-export async function generateQuotationPDF2() {
+export async function generateQuotationPDF2(quotationdata) {
   const tempDir = "temp";
   fs.mkdirSync(tempDir, { recursive: true });
 
-  const outputPath = path.join("outputs", "Quotation33.pdf");
+//  customer Info .......
+ const customerDetails = quotationdata?.enquiry; 
+
+
+
+  const outputPath = path.join("outputs",   quotationdata?.Pip_Name|| "Quotation33.pdf");
 
   if (!fs.existsSync("outputs")) {
     fs.mkdirSync("outputs", { recursive: true });
@@ -1069,9 +1384,9 @@ export async function generateQuotationPDF2() {
   doc.pipe(stream);
 
   const priceDetails = [
-    { label: "Ex-Showroom Price", value: "480100" },
+    { label: "Ex-Showroom Price", value: quotationdata?.ex_showroom_price },
 
-    { label: "Registration Charges", value: "50809" },
+    { label: "Registration Charges", value: quotationdata?.registration_charge },
     ,
     { label: "Motor Insurance", value: "26825" },
 
@@ -1097,14 +1412,14 @@ export async function generateQuotationPDF2() {
 
   const items = [
     { label: "(+) Other Charge", value: "0" },
-  ,
+    ,
     { label: "(-) Car Exchange Amount", value: "0" },
-   
+
     { label: "(-) Vin Discount", value: "0" },
-  
+
     { label: "(-) Cash Discount", value: "0" },
   ];
-  
+
 
 
   try {
@@ -1208,14 +1523,14 @@ export async function generateQuotationPDF2() {
       .moveDown(0.4)
       .font("Helvetica-BoldOblique")
 
-      .text(`Customer Name : Mr SHAURYA RAO `, 25)
+      .text(`Customer Name : ${customerDetails?.name_prefix} ${customerDetails?.first_name } ${customerDetails?.last_name } `, 25)
 
       .moveDown(0.2)
-      .text("Address : Raipur, CHHATTISGARH", 25,)
+      .text(`Address : ${customerDetails?.city} ${customerDetails?.state}`, 25,)
       .moveDown(0.2)
-      .text("Email : Carcred7667@gmail.com", 25)
+      .text(`Email : ${customerDetails?.email}`, 25)
       .moveDown(0.2)
-      .text(`Mobile : 8878332000`, 25)
+      .text(`Mobile :  ${customerDetails?.mobile}`, 25)
 
     doc.moveDown(0.2)
 
@@ -1287,79 +1602,77 @@ export async function generateQuotationPDF2() {
       .text("Model Details", 25, consultantDetailsY1 - 12)
 
     doc.moveDown(3)
-    
-    doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .text(`Model : KWID `, 25)
 
-    .moveDown(0.2)
-    .text("Varient: RXE MT 6.2 2024", 25,)
-    .moveDown(0.2)
-    .text(`Color :  ELECTRIC BLUE`, 25)
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(`Model : ${quotationdata?.name} `, 25)
+
+      .moveDown(0.2)
+      .text(`Varient: ${quotationdata?.varient}`, 25,)
+      .moveDown(0.2)
+      .text(`Color :  ${quotationdata?.color}`, 25)
 
     doc.moveDown(3)
 
-     
- 
-    // doc.font("Helvetica-Bold").fontSize(10).text("(+) Other Charge", 300, doc.y);
 
-    // Print the value on the right
+
 
 
 
     doc
-    .moveTo(20, doc.y)
-    .lineTo(300, doc.y)
-    .lineWidth(1)
-    .strokeColor("black")
-    .stroke();
+      .moveTo(20, doc.y)
+      .lineTo(300, doc.y)
+      .lineWidth(1)
+      .strokeColor("black")
+      .stroke();
     doc.moveDown(3)
 
- 
+
     doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .text(`Exchange Car Detail`, 25)
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(`Exchange Car Detail`, 25)
 
     doc.moveDown(3)
 
-    
+
     doc
-    .moveTo(20, doc.y+10)
-    .lineTo(296, doc.y+10)
-    .lineWidth(1)
-    .strokeColor("black")
-    .stroke();
+      .moveTo(20, doc.y + 10)
+      .lineTo(296, doc.y + 10)
+      .lineWidth(1)
+      .strokeColor("black")
+      .stroke();
     doc.moveDown(1)
 
     doc
-    .moveTo(150, doc.y-3)
-    .lineTo(150, doc.y+72)
-    .stroke();
+      .moveTo(150, doc.y - 3)
+      .lineTo(150, doc.y + 72)
+      .stroke();
 
 
-  doc.moveDown(0.5)
-items.forEach((item) => {
-    
-  doc.font("Helvetica-Bold").fontSize(10).text(item.label, 24, doc.y);
-  doc.font("Helvetica-Bold").fontSize(10).text(item.value, 160, doc.y - 10);
+    doc.moveDown(0.5)
+    items.forEach((item) => {
 
-  // Draw a line below each entry
-if(item.label!=="(-) Cash Discount")  
-{  doc
-    .moveTo(20, doc.y)
-    .lineTo(296, doc.y)
-    .lineWidth(1)
-    .strokeColor("black")
-    .stroke();
-    doc.moveDown(0.5)}
-});
-    
+      doc.font("Helvetica-Bold").fontSize(10).text(item.label, 24, doc.y);
+      doc.font("Helvetica-Bold").fontSize(10).text(item.value, 160, doc.y - 10);
+
+      // Draw a line below each entry
+      if (item.label !== "(-) Cash Discount") {
+        doc
+          .moveTo(20, doc.y)
+          .lineTo(296, doc.y)
+          .lineWidth(1)
+          .strokeColor("black")
+          .stroke();
+        doc.moveDown(0.5)
+      }
+    });
 
 
-  
-  
+
+
+
 
     doc
       .font("Helvetica-Bold")
@@ -1400,19 +1713,6 @@ if(item.label!=="(-) Cash Discount")
       }
 
     });
- 
-
-    doc
-      .moveTo(20, doc.y)  // Start from left (20px padding)
-      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
-      .lineWidth(1)  // Set line thickness
-      .strokeColor("black")  // Set line color
-      .stroke();
-      doc.moveDown(1)
-
-
-      doc.font("Helvetica-Bold").fontSize(12).text("ON-ROAD PRICE", 300, doc.y, { continued: true });
-      doc.text("590876", 432, doc.y);
 
 
     doc
@@ -1421,20 +1721,11 @@ if(item.label!=="(-) Cash Discount")
       .lineWidth(1)  // Set line thickness
       .strokeColor("black")  // Set line color
       .stroke();
+    doc.moveDown(1)
 
 
-
-      doc
-      .moveTo(20, doc.y)  // Start from left (20px padding)
-      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
-      .lineWidth(1)  // Set line thickness
-      .strokeColor("black")  // Set line color
-      .stroke();
-      doc.moveDown(0.4)
-
-
-      doc.font("Helvetica-Bold").fontSize(12).text("Amount In Words : Five Lakh Ninty Thousand Eight Hundred & Seventy Six ", 30, doc.y, );
-    
+    doc.font("Helvetica-Bold").fontSize(12).text("ON-ROAD PRICE", 300, doc.y, { continued: true });
+    doc.text("590876", 432, doc.y);
 
 
     doc
@@ -1445,55 +1736,153 @@ if(item.label!=="(-) Cash Discount")
       .stroke();
 
 
-      doc.font("Helvetica-Bold").fontSize(10).text("Terms & Conditions:", 30, doc.y + 20);
-      doc.moveDown(); // Adds space below the heading
-      
-      doc.font("Helvetica").fontSize(8);
-      
-      const terms = [
-        "1) Price and statutory levies at the time of delivery are as applicable irrespective of when the initial payment is made.",
-        "2) Vehicle will be delivered only after realization of full and final payment.",
-        "3) This is not an order form and no claim for priority can be made on the basis of this quotation.",
-        "4) This quotation is applicable only for the day of issuance.",
-        "5) All the matters/issues (if any) shall be subjected to the exclusive jurisdiction of the competent courts in the State of the Dealer with whom the booking is made.",
-        "6) Ex-showroom/insurance price may vary due to any offer from Dealer/Market conditions from time to time.",
-        "7) TCS @ 1% applicable if Ex-Showroom Price is above INR 10 lac.",
-        "8) Warranty applicable as per manufacturer terms and conditions.",
-        "9) The aforementioned prices are tentative in nature and subject to change."
-      ];
-      
-      terms.forEach((term) => {
-        doc.text(term, { width: 550, align: "left" });
-        doc.moveDown(0.5); // Adds spacing between each line
-      });
-      doc.font("Helvetica-Bold").fontSize(25).fillColor("gray").opacity(0.3)
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+    doc.moveDown(0.4)
+
+
+    doc.font("Helvetica-Bold").fontSize(12).text("Amount In Words : Five Lakh Ninty Thousand Eight Hundred & Seventy Six ", 30, doc.y,);
+
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+    doc.font("Helvetica-Bold").fontSize(10).text("Terms & Conditions:", 30, doc.y + 20);
+    doc.moveDown(); // Adds space below the heading
+
+    doc.font("Helvetica").fontSize(8);
+
+    const terms = [
+      "1) Price and statutory levies at the time of delivery are as applicable irrespective of when the initial payment is made.",
+      "2) Vehicle will be delivered only after realization of full and final payment.",
+      "3) This is not an order form and no claim for priority can be made on the basis of this quotation.",
+      "4) This quotation is applicable only for the day of issuance.",
+      "5) All the matters/issues (if any) shall be subjected to the exclusive jurisdiction of the competent courts in the State of the Dealer with whom the booking is made.",
+      "6) Ex-showroom/insurance price may vary due to any offer from Dealer/Market conditions from time to time.",
+      "7) TCS @ 1% applicable if Ex-Showroom Price is above INR 10 lac.",
+      "8) Warranty applicable as per manufacturer terms and conditions.",
+      "9) The aforementioned prices are tentative in nature and subject to change."
+    ];
+
+
+
+    terms.forEach((term) => {
+      doc.text(term, { width: 550, align: "left" });
+      doc.moveDown(0.5); // Adds spacing between each line
+    });
+
+
+
+
+    doc.moveDown(5)
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text("MAHADEVA CARS PVT LTD", 440, doc.y)
+
+
+    doc
+      .moveTo(20, doc.y)  // Start from left (20px padding)
+      .lineTo(doc.page.width - 20, doc.y)  // Extend to the right edge (full width)
+      .lineWidth(1)  // Set line thickness
+      .strokeColor("black")  // Set line color
+      .stroke();
+
+
+
+    doc.font("Helvetica-Bold").fontSize(10).text("Customer Signature", 25, doc.y + 10, { continued: true });
+    doc.text("Authourized Signatory", 370, doc.y);
+
+
+    doc.font("Helvetica-Bold").fontSize(25).fillColor("gray").opacity(0.3)
       .rotate(-45, { origin: [doc.page.width / 2, doc.page.height / 2] })
-      .text("NOT FOR BANK LOGIN AND FINANCE", 40, doc.page.height / 2, { align: "center" }).opacity(1).rotate(0);
+      .text("NOT FOR BANK LOGIN AND FINANCE", 40, doc.page.height / 2, { align: "center" }).opacity(1).rotate(0)
 
 
-
-
-
-    
-
-
-
-
-
-
-   
-
-
- 
 
 
     doc.end();
-    stream.on("finish", () => console.log(`✅ PDF saved successfully at: ${outputPath}`));
+    stream.on("finish", () => console.log(`✅ PDF saved successfully at: ${outputPath}`
+      
+
+    ));
+
+   return true; 
+
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
+    return false; 
   }
 }
 
 
+
+export const quotationPDf = async (req, res) => {
+  try {
+
+      console.log("req.body  for quotion", req.body)
+
+     
+
+    const data = await generateQuotationPDF2(req.body);
+
+    if (data) {
+      return res.status(200).json({
+        message: 'Successfully created',
+      });
+    }
+
+    return res.status(500).json({
+      message: 'An error occurred while uploading the file.',
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while uploading the file.',
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+
+export const getVinByCreatedBy = async (req, res) => {
+  try {
+      const userId = req.user.id; 
+
+      const limit = parseInt(req.query.limit) || 10; // Default limit is 10
+      const offset = parseInt(req.query.offset) || 0; // Default offset is 0
+     
+
+      const vinDetails = await VinDetails.findAll({
+          where: { created_by : userId },
+          limit,
+          offset
+      });
+
+      if (!vinDetails.length) return res.status(404).json({ message: 'No VIN records found for this creator' });
+
+      res.status(200).json(vinDetails);
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching VIN details', details: error.message });
+  }
+};
 
 
