@@ -456,8 +456,8 @@ export async function generateQuotationPDF(Data) {
 
 export const createEnquiry = async (req, res) => {
   try {
-
-
+    
+    const today = new Date().toISOString().split('T')[0];
 
     const uniqueId = await generateUniqueEnquiryId()
     const {
@@ -508,6 +508,9 @@ export const createEnquiry = async (req, res) => {
       final_on_road_price,
       temporary_registration,
       color_name,
+      source_remark,
+    
+      
 
     } = req.body;
     const data = req.body.CarAmounts;
@@ -534,6 +537,7 @@ export const createEnquiry = async (req, res) => {
       city,
       state,
       branch_id: req.user?.branch_id,
+      source_remark,
 
 
       source,
@@ -542,7 +546,7 @@ export const createEnquiry = async (req, res) => {
       model_code,
       model_id,
       variant_name,
-      enquiry_date,
+      enquiry_date :today,
       enquiry_id: uniqueId,
       created_by: req.user.id,
     });
@@ -551,7 +555,7 @@ export const createEnquiry = async (req, res) => {
     const quotation = await Quotation.create({
       dealer_id,
       branch_id,
-      date: enquiry_date,
+      date: today,
       cardetail_id,
       model_id,
       color_id,
@@ -958,11 +962,12 @@ export const getEnquiry = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { Search, startDate, endDate, enquiry_status } = req.query;
+      console.log(req.query)
+    
 
     // enquiry_status?.join(',').split(',')
 
 
-    console.log("req.query --------------------------------------------------------------------", req.query)
 
     let searchCondition = '';  // Condition for firstName and mobile
     let DateFilter = '';       // Condition for date range
@@ -971,6 +976,8 @@ export const getEnquiry = async (req, res) => {
     // Handle Search filter for firstName and mobile
     if (Search) {
       searchCondition = `AND (enquiry1.first_name LIKE :Search OR enquiry1.mobile LIKE :Search)`;
+
+    
     }
 
     // Handle date range filter
@@ -983,7 +990,6 @@ export const getEnquiry = async (req, res) => {
       statusCondition = `AND enquiry1.enquiry_status IN (:enquiry_status)`;
     }
 
-    console.log("enquiry_status", enquiry_status)
 
 
     // Raw SQL query with dynamic userId and dynamic search conditions
@@ -999,14 +1005,14 @@ export const getEnquiry = async (req, res) => {
       ORDER BY enquiry_date DESC
       LIMIT :limit OFFSET :offset;
     `;
-
-    console.log("query----------------------------------", query)
+   console.log("query", query)
+    
 
     // Execute raw query using Sequelize
     const enquiries = await sequelize.query(query, {
       replacements: {
         userId,
-        Search: `%${Search || ''}%`,  // Default to empty string if not provided
+        Search: `${Search || ''}%`,  // Default to empty string if not provided
         startDate: startDate || null, // Ensure null if not provided
         endDate: endDate || null,     // Ensure null if not provided
         enquiry_status: enquiry_status?.join(',').split(',') || null, // Ensure null if not provided
@@ -1016,7 +1022,8 @@ export const getEnquiry = async (req, res) => {
       type: sequelize.QueryTypes.SELECT,
     });
 
-    // Count total records (without LIMIT & OFFSET) with dynamic conditions
+
+
     const countQuery = `
       SELECT COUNT(*) as total FROM enquiry1
       LEFT JOIN raw_quotation ON enquiry1.enquiry_id = raw_quotation.enquiry_id
@@ -1029,7 +1036,7 @@ export const getEnquiry = async (req, res) => {
     const totalCountResult = await sequelize.query(countQuery, {
       replacements: {
         userId,
-        Search: `%${Search || ''}%`,
+        Search: `${Search || ''}%`,
         startDate: startDate || null,
         endDate: endDate || null,
         enquiry_status: enquiry_status || null
@@ -1038,6 +1045,7 @@ export const getEnquiry = async (req, res) => {
     });
 
     const totalEnquiries = totalCountResult[0]?.total || 0;
+       console.log("totalEnquiries", totalEnquiries)
     const totalPages = Math.ceil(totalEnquiries / limit);
 
     res.status(200).json({

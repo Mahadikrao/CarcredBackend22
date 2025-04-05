@@ -1,12 +1,4 @@
-// import { Sequelize } from 'sequelize';
-//  export const sequelizedbconnection = new Sequelize('test', 'root', '', {
-//     host: 'localhost',
-//     dialect: 'mysql',
-//     logging: false,  // Optional: Disable SQL logging (set to `console.log` to enable)
-//   });
 
-
-  // src/utils/db.js
 import { Sequelize } from 'sequelize';
 
 export const sequelizedbconnection = () => {
@@ -106,11 +98,3 @@ function extractLoanDetails(text) {
 }
 
 // Process each bank's data
-bankDataSamples.forEach((sample) => {
-  const details = extractLoanDetails(sample.text);
-  console.log(`Bank: ${sample.bankName}`);
-  console.log(`Loan Amount: ${details.loanAmount}`);
-  console.log(`Customer Name: ${details.customerName}`);
-  console.log(`Branch: ${details.branchName}`);
-  console.log('---');
-});
