@@ -83,7 +83,7 @@ export async function generateUniqueEnquiryIdlone(prefix = "ENQMCPL") {
 
 export const createLoanDetail = async (req, res) => {
   try {
-    console.log("new============", req.body,   "new============")
+  
     const sequelize = sequelizedbconnection();
 
     const transaction = await sequelize.transaction();
@@ -416,7 +416,7 @@ export const createLoanDetail = async (req, res) => {
       branch_contact_person,
       branch_mobile,
       lead_type,
-      created_by,
+      created_by: req.user.id,
       updated_by,
       updated_date,
       bank_posting_date,
@@ -429,6 +429,7 @@ export const createLoanDetail = async (req, res) => {
       refered_date,
       referred_remark,
       loan_id : uniqueIdloneid,
+    
 
     }, { transaction });
 
@@ -457,48 +458,94 @@ export const getLoanDetails = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
 
+    const { Search, startDate, endDate,  loan_status  } = req.query;
+      console.log("loan_status",  loan_status)
+
+      
+    let searchCondition = '';  // Condition for firstName and mobile
+    let DateFilter = '';       // Condition for date range
+    let statusCondition = '';  // Condition for enquiry status
+
+
+    if (Search) {
+      searchCondition = `AND (enquiry.first_name LIKE :Search OR enquiry.mobile LIKE :Search)`;
+
+}
+    
+
+    // Handle date range filter
+    if (startDate && endDate && startDate !== 'null' && endDate !== 'null') {
+      DateFilter = `AND (loan_detail.date BETWEEN :startDate AND :endDate )`;
+    }
+
+    // Handle enquiry status filter
+    if (loan_status && Array.isArray(loan_status) && loan_status.length > 0 && loan_status[0] !== '') {
+      statusCondition = `AND loan_detail.loan_status IN (:loan_status )`;
+    }
+
+
+
     // Raw SQL query with dynamic userId
     const query = `
       SELECT * FROM enquiry 
       LEFT JOIN quotation ON enquiry.enquiry_id = quotation.enquiry_id
       LEFT JOIN loan_detail ON enquiry.enquiry_id = loan_detail.enquiry_id
-        LEFT JOIN car_model ON   quotation.model_id = car_model.model_id
+      LEFT JOIN car_model ON   quotation.model_id = car_model.model_id
       LEFT JOIN car_detail ON quotation.cardetail_id = car_detail.detail_id
-      
-      WHERE enquiry.created_by = :userId OR quotation.created_by = :userId
+      WHERE (enquiry.created_by = :userId OR quotation.created_by = :userId)
 
-      UNION
+    ${searchCondition} 
+    ${DateFilter} 
+    ${statusCondition}
+   
+    
 
-      SELECT * FROM enquiry
-      RIGHT JOIN quotation ON enquiry.enquiry_id = quotation.enquiry_id
-      RIGHT JOIN loan_detail ON enquiry.enquiry_id = loan_detail.enquiry_id
-      RIGHT JOIN car_model ON   quotation.model_id = car_model.model_id
-      RIGHT JOIN car_detail ON quotation.cardetail_id = car_detail.detail_id
-      WHERE enquiry.created_by = :userId OR quotation.created_by = :userId
+      ORDER BY loan_detail.date DESC
+
       LIMIT :limit OFFSET :offset;
     `;
 
+   
+
+
     // Execute raw query using Sequelize
     const enquiries = await sequelize.query(query, {
-      replacements: { userId, limit, offset },
+      replacements: { userId,
+        Search: `${Search || ''}%`,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        loan_status: loan_status?.join(',').split(',') || null, // Ensure null if not provided
+        limit, 
+        offset },
       type: sequelize.QueryTypes.SELECT,
     });
 
-    // Count total records (without LIMIT & OFFSET)
+
+
+  // Count total records (without LIMIT & OFFSET)
     const countQuery = `
-      SELECT COUNT(*) as total FROM (
-        SELECT enquiry.enquiry_id FROM enquiry
-        LEFT JOIN quotation ON enquiry.enquiry_id = quotation.enquiry_id
-        WHERE enquiry.created_by = :userId OR quotation.created_by = :userId
-        UNION
-        SELECT enquiry.enquiry_id FROM enquiry
-        RIGHT JOIN quotation ON enquiry.enquiry_id = quotation.enquiry_id
-        WHERE enquiry.created_by = :userId OR quotation.created_by = :userId
-      ) AS combinedData;
-    `;
+    SELECT COUNT(*) as total FROM enquiry 
+    LEFT JOIN quotation ON enquiry.enquiry_id = quotation.enquiry_id
+    LEFT JOIN loan_detail ON enquiry.enquiry_id = loan_detail.enquiry_id
+    LEFT JOIN car_model ON quotation.model_id = car_model.model_id
+    LEFT JOIN car_detail ON quotation.cardetail_id = car_detail.detail_id
+    WHERE (enquiry.created_by = :userId OR quotation.created_by = :userId)
+    ${searchCondition} 
+    ${DateFilter} 
+    ${statusCondition}
+
+  `;
 
     const totalCountResult = await sequelize.query(countQuery, {
-      replacements: { userId },
+      replacements: { 
+        userId, 
+        Search: `${Search || ''}%`,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        loan_status : loan_status?.join(',').split(',') || null, // Ensure null if not provided
+
+
+      },
       type: sequelize.QueryTypes.SELECT,
     });
 

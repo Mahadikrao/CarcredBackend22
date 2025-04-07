@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
-const PDF_DIRECTORY = "C:/CarCred/CarCredBackend/outputs";
+const PDF_DIRECTORY = "D:/SourceCode/CarCredBackend/outputs";
+
 
 
 export const downloadPDF = async (req, res) => {

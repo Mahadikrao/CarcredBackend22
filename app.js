@@ -69,14 +69,5 @@ app.listen(PORT, () => {
 });
 
 
-const quotationData = {
-  Pip_Name: "quotation_123.pdf",
-  Customer_Name: "John Doe",
-  Mobile: "9876543210",
-  Consultant_Name: "Jane Smith",
-  Contact_Number: "1234567890"
-};
 
-generateQuotationPDF2()
-// generateQuotationPDF2(quotationData);
 

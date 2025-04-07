@@ -1,5 +1,5 @@
 import express from 'express';
-import { AadhharCard, createEnquiry, generatePip, getDashboardData , getEnquiry, quotationPDf } from '../controllers/CustomerController.js';
+import { AadhharCard, createEnquiry, generatePip, getDashboardData , getEnquiry,  quotationPDf } from '../controllers/CustomerController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { downloadPDF } from '../controllers/Pippdf.js';
 import { createLoanDetail, getLoanDetails } from '../controllers/Leadgenration.js';
@@ -24,6 +24,10 @@ router.get('/getdashbordinfo', verifyToken,  getDashboardData )
 router.post('/aadhharcard', verifyToken,  AadhharCard)
 
 router.post('/quotationpdf', verifyToken,  quotationPDf)
+
+
+
+
 
 
 

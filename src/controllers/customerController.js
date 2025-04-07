@@ -15,6 +15,8 @@ import UserWorkLocation from '../models/UserworkLocation.js';
 import { sequelizedbconnection } from "../services/sequelizedbcon.js";
 import { users_aadhaar } from '../utils/DemoAadhardata.js';
 import VinDetails from '../models/Vindetails.js';
+import User from '../models/User.js';
+
 
 const sequelize = sequelizedbconnection();
 
@@ -456,7 +458,7 @@ export async function generateQuotationPDF(Data) {
 
 export const createEnquiry = async (req, res) => {
   try {
-    
+
     const today = new Date().toISOString().split('T')[0];
 
     const uniqueId = await generateUniqueEnquiryId()
@@ -509,8 +511,8 @@ export const createEnquiry = async (req, res) => {
       temporary_registration,
       color_name,
       source_remark,
-    
-      
+
+
 
     } = req.body;
     const data = req.body.CarAmounts;
@@ -546,7 +548,7 @@ export const createEnquiry = async (req, res) => {
       model_code,
       model_id,
       variant_name,
-      enquiry_date :today,
+      enquiry_date: today,
       enquiry_id: uniqueId,
       created_by: req.user.id,
     });
@@ -962,8 +964,8 @@ export const getEnquiry = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { Search, startDate, endDate, enquiry_status } = req.query;
-      console.log(req.query)
-    
+    console.log(req.query)
+
 
     // enquiry_status?.join(',').split(',')
 
@@ -977,7 +979,7 @@ export const getEnquiry = async (req, res) => {
     if (Search) {
       searchCondition = `AND (enquiry1.first_name LIKE :Search OR enquiry1.mobile LIKE :Search)`;
 
-    
+
     }
 
     // Handle date range filter
@@ -1005,8 +1007,8 @@ export const getEnquiry = async (req, res) => {
       ORDER BY enquiry_date DESC
       LIMIT :limit OFFSET :offset;
     `;
-   console.log("query", query)
-    
+    console.log("query", query)
+
 
     // Execute raw query using Sequelize
     const enquiries = await sequelize.query(query, {
@@ -1039,13 +1041,13 @@ export const getEnquiry = async (req, res) => {
         Search: `${Search || ''}%`,
         startDate: startDate || null,
         endDate: endDate || null,
-        enquiry_status: enquiry_status || null
+        enquiry_status: enquiry_status?.join(',').split(',') || null, // Ensure null if not provided || null
       },
       type: sequelize.QueryTypes.SELECT,
     });
 
     const totalEnquiries = totalCountResult[0]?.total || 0;
-       console.log("totalEnquiries", totalEnquiries)
+    console.log("totalEnquiries", totalEnquiries)
     const totalPages = Math.ceil(totalEnquiries / limit);
 
     res.status(200).json({
@@ -1070,7 +1072,7 @@ export const getEnquiry = async (req, res) => {
 export const generatePip = async (req, res) => {
   try {
 
-    console.log("req----", req.body);
+
 
     const { model_id, } = req.body; // Extract model_id from request body
 
@@ -1106,6 +1108,8 @@ export const generatePip = async (req, res) => {
 export const getDashboardData = async (req, res) => {
   try {
     const userId = req.user.id;
+
+
 
 
     // Get today's date
@@ -1237,11 +1241,13 @@ WHERE (loan_status = 'APPROVED'
       type: sequelize.QueryTypes.SELECT,
     });
 
+
     // Execute the query for loan details created today
     const loanDetailsToday = await sequelize.query(queryForTodayLoanDetails, {
       replacements: { userId, todayFormatted },
       type: sequelize.QueryTypes.SELECT,
     });
+
 
     // Execute the query for loan details created between today and last month
     const loanDetailsLastMonth = await sequelize.query(queryForLastMonthLoanDetails, {
@@ -1304,6 +1310,18 @@ WHERE (loan_status = 'APPROVED'
 
 export const BranchDetails = async (req, res) => {
   try {
+
+                               
+
+    const user = await User.findOne({
+      where: { user_id: req.user.id },
+      attributes: { exclude: ['password'] }  // Exclude the password field
+    });
+      
+                            
+                            
+
+
     const userLocation = await UserWorkLocation.findOne({
       where: { user_id: req.user.id },
     });
@@ -1333,10 +1351,13 @@ export const BranchDetails = async (req, res) => {
       return res.status(404).json({ message: "Dealer details not found" });
     }
 
+       
     return res.status(200).json({
+      user : user, 
       dealerDetails: BranchdataAll,
       userLocation,
       branchData: Branchdata,
+   
     });
   } catch (error) {
     console.error("Error fetching branch details:", error);
@@ -1376,12 +1397,12 @@ export async function generateQuotationPDF2(quotationdata) {
   const tempDir = "temp";
   fs.mkdirSync(tempDir, { recursive: true });
 
-//  customer Info .......
- const customerDetails = quotationdata?.enquiry; 
+  //  customer Info .......
+  const customerDetails = quotationdata?.enquiry;
 
 
 
-  const outputPath = path.join("outputs",   quotationdata?.Pip_Name|| "Quotation33.pdf");
+  const outputPath = path.join("outputs", quotationdata?.Pip_Name || "Quotation33.pdf");
 
   if (!fs.existsSync("outputs")) {
     fs.mkdirSync("outputs", { recursive: true });
@@ -1531,7 +1552,7 @@ export async function generateQuotationPDF2(quotationdata) {
       .moveDown(0.4)
       .font("Helvetica-BoldOblique")
 
-      .text(`Customer Name : ${customerDetails?.name_prefix} ${customerDetails?.first_name } ${customerDetails?.last_name } `, 25)
+      .text(`Customer Name : ${customerDetails?.name_prefix} ${customerDetails?.first_name} ${customerDetails?.last_name} `, 25)
 
       .moveDown(0.2)
       .text(`Address : ${customerDetails?.city} ${customerDetails?.state}`, 25,)
@@ -1823,15 +1844,15 @@ export async function generateQuotationPDF2(quotationdata) {
 
     doc.end();
     stream.on("finish", () => console.log(`✅ PDF saved successfully at: ${outputPath}`
-      
+
 
     ));
 
-   return true; 
+    return true;
 
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
-    return false; 
+    return false;
   }
 }
 
@@ -1840,9 +1861,9 @@ export async function generateQuotationPDF2(quotationdata) {
 export const quotationPDf = async (req, res) => {
   try {
 
-      console.log("req.body  for quotion", req.body)
+    console.log("req.body  for quotion", req.body)
 
-     
+
 
     const data = await generateQuotationPDF2(req.body);
 
@@ -1870,27 +1891,149 @@ export const quotationPDf = async (req, res) => {
 
 
 
-
 export const getVinByCreatedBy = async (req, res) => {
   try {
-      const userId = req.user.id; 
+    const query = `
+      SELECT * FROM vin_detail
+      LEFT JOIN car_model ON car_model.model_id = vin_detail.model_id
+      WHERE (vin_detail.dealer_id = :dealer_id AND vin_detail.branch_id = :branch_id)
+    `;
 
-      const limit = parseInt(req.query.limit) || 10; // Default limit is 10
-      const offset = parseInt(req.query.offset) || 0; // Default offset is 0
+    const Result = await sequelize.query(query, {
+      replacements: {
+        dealer_id: req?.user.dealer_id,
+        branch_id: req?.user.branch_id,
+      },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+   
+
+    // Maps to hold counts for each vin name
+    let AlloctedDetatils = new Map();
+    let FreeDetatils = new Map();
+
+    // Iterate through the results and count the vin_statuses
+    Result.forEach((vinditails) => {
+      // Only count if the vin name is not already in the map
+      if (!AlloctedDetatils.has(vinditails.name)) {
+        let allocatedCount = 0;
+        let freeCount = 0;
+
+        // Count the status occurrences for the current name
+        Result.forEach((item) => {
+          if (item.name === vinditails.name) {
+            if (item.vin_status === "ALLOTED") {
+              allocatedCount++;
+            } else if (item.vin_status === "FREE") {
+              freeCount++;
+            }
+          }
+        });
+
+        // Store the counts in the map
+        AlloctedDetatils.set(vinditails.name, allocatedCount);
+        FreeDetatils.set(vinditails.name, freeCount);
+      }
+    });
+
+    const allocatedObj = Object.fromEntries(AlloctedDetatils);
+    const freeObj = Object.fromEntries(FreeDetatils);
+
+    res.status(200).json({
+      allocatedObj,
+      freeObj , 
      
+    });
 
-      const vinDetails = await VinDetails.findAll({
-          where: { created_by : userId },
-          limit,
-          offset
-      });
-
-      if (!vinDetails.length) return res.status(404).json({ message: 'No VIN records found for this creator' });
-
-      res.status(200).json(vinDetails);
   } catch (error) {
-      res.status(500).json({ error: 'Error fetching VIN details', details: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong' });
   }
 };
 
+
+
+
+
+export const getVinAllDetails = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    const { model_id, vin_status } = req.query; // Fix here: use req.query instead of req.param
+
+    // Build dynamic search condition for model_id and vin_status
+    let searchCondition = '';  
+    if (model_id || vin_status) {
+      const conditions = [];
+      if (model_id) {
+        conditions.push(`vin_detail.model_id LIKE :model_id`);
+      }
+      if (vin_status) {
+        conditions.push(`vin_detail.vin_status LIKE :vin_status`);
+      }
+      searchCondition = `AND (${conditions.join(' AND ')})`;
+    }
+
+    const query = `
+      SELECT * FROM vin_detail
+      LEFT JOIN car_model ON car_model.model_id = vin_detail.model_id
+      WHERE vin_detail.dealer_id = :dealer_id
+      AND vin_detail.branch_id = :branch_id
+      ${searchCondition} 
+      LIMIT :limit OFFSET :offset;
+    `;
+
+    const result = await sequelize.query(query, {
+      replacements: {
+        dealer_id: req?.user.dealer_id,
+        branch_id: req?.user.branch_id,
+        model_id: model_id ? `%${model_id}%` : '%',  // Default to '%' if no model_id is provided
+        vin_status: vin_status ? `%${vin_status}%` : '%',  // Default to '%' if no vin_status is provided
+        limit: limit,
+        offset: offset,
+      },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Get the total count of records (for pagination info)
+    const countQuery = `
+      SELECT COUNT(*) as total FROM vin_detail
+      LEFT JOIN car_model ON car_model.model_id = vin_detail.model_id
+      WHERE vin_detail.dealer_id = :dealer_id
+      AND vin_detail.branch_id = :branch_id
+      ${searchCondition}
+    `;
+
+    const countResult = await sequelize.query(countQuery, {
+      replacements: {
+        dealer_id: req?.user.dealer_id,
+        branch_id: req?.user.branch_id,
+        model_id: model_id ? `%${model_id}%` : '%',
+        vin_status: vin_status ? `%${vin_status}%` : '%',
+      },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    const totalRecords = countResult[0].total;  // Total number of records for pagination
+    const totalPages = Math.ceil(totalRecords / limit);  // Calculate total pages
+
+    // Send paginated response with additional pagination info
+    res.status(200).json({
+      pagination: {
+        totalRecords,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+      },
+      result,
+    
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+};
 
