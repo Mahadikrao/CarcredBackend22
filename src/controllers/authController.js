@@ -160,19 +160,20 @@ export const login = async (req, res) => {
       where: { branch_id: userLocation.location_id },
     });
 
- 
+  
+
+  
 
     if (!Branchdata) {
       return res.status(404).json({ message: "Branch details not found" });
     }
 
     
+    const DealerDetailsid =  await DealerDetails.findOne({
+      where: { dealer_id: Branchdata.dealer_id },
+    });
 
-
-
-  
-
-
+    console.log("DealerDetailsid", DealerDetailsid?.prefix )
 
 
     if (password!== user.password) {
@@ -181,7 +182,7 @@ export const login = async (req, res) => {
 
     // Generate a JWT token (payload contains user ID and email)
     const token = jwt.sign(
-      { id: user.user_id,   role: user.role_id, branch_id : Branchdata?.branch_id,  dealer_id :  Branchdata?. dealer_id },
+      { id: user.user_id,   role: user.role_id, branch_id : Branchdata?.branch_id,  dealer_id :  Branchdata?.dealer_id , prefix : DealerDetailsid?.prefix},
       process.env.JWT_SECRET_KEY,  // Secret key for signing the token
       { expiresIn: '30d' }  // Token expiration time (1 day in this case)
     );

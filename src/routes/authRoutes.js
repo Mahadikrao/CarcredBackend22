@@ -4,7 +4,7 @@ import { createUserProfile, getloginUserDetils, getuserInfo} from "../controller
 import multer from 'multer';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { processOCR } from '../controllers/ocr.js';
-import { CarColor, CarDetails, createCarVariant, getCarColor, getCarmodel, getVarients, modelTypes, modelvarientdetails } from '../controllers/cardetails.js';
+import { CarColor, CarDetails, createCarVariant, getCarColor, getCarmodel, getVarients, modelTypes, modelTypesTransmition, modelvarientdetails } from '../controllers/cardetails.js';
 import { BranchDetails, getVinAllDetails, getVinByCreatedBy } from '../controllers/CustomerController.js';
 import path from 'path';
 const storage = multer.memoryStorage(); // Store files in memory as Buffer
@@ -66,6 +66,8 @@ router.get('/getvarients', verifyToken, getVarients);
 router.get('/modelvarientdetails', verifyToken,  modelvarientdetails);
 
 router.get('/modelTypes', verifyToken,  modelTypes);
+
+router.get('/modelTypestransmition', verifyToken,  modelTypesTransmition);
 
 router.get('/states', verifyToken,  getAllStates);
 

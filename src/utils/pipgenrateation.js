@@ -2,6 +2,7 @@ import PDFDocumentWithTables from 'pdfkit-table';
 import fs from 'fs';
 import axios from 'axios';
 import path from 'path';
+import car_color from '../models/Modelcolor.js';
 
 // Static Data for Dealership and Product Information
 const data = {
@@ -33,6 +34,44 @@ const cars = [
     { color: "ELECTRIC BLUE", image: "https://shorturl.at/iv6Eu" },
     { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://shorturl.at/iv6Eu" },
 ];
+
+export const getCaracolor = async (req, res) => {
+    try {
+      // Extract model_id from request parameters
+
+      const baseUrl  = `https://demo.carcred.co.in/`
+      const { model_id } = req.params;
+      console.log("Model ID:", model_id);
+  
+      // Query the database to get colors for the specific model_id
+      const colors = await car_color.findAll({
+        where: {
+          model_id: model_id  // Use the dynamic model_id, not hardcoded 'M0002'
+        }
+      });
+  
+      // Map the colors to only include image and color_name
+      const color = colors.map((car) => ({
+        image: `${baseUrl}${car.model_image.replace(/\.\.\//g, "")}` ,
+        color: car.color_name
+      }));
+  
+      // If no colors are found, return a 404 response
+      if (colors.length === 0) {
+        return res.status(404).json({ message: "No colors found for the specified model" });
+      }
+  
+      // Return the list of colors
+      return res.status(200).json(color);
+    } catch (error) {
+      // Log the error and return a 500 status with the error message
+      console.error("Error fetching colors: ", error);
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
+
+
 
 // Table Data for Car Pricing
 const table = {

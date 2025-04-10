@@ -3,6 +3,7 @@ import { AadhharCard, createEnquiry, generatePip, getDashboardData , getEnquiry,
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { downloadPDF } from '../controllers/Pippdf.js';
 import { createLoanDetail, getLoanDetails } from '../controllers/Leadgenration.js';
+import { getCaracolor } from '../utils/pipgenrateation.js';
 const router = express.Router();
 
 router.post('/createenenquiry',  verifyToken,   createEnquiry);
@@ -25,6 +26,7 @@ router.post('/aadhharcard', verifyToken,  AadhharCard)
 
 router.post('/quotationpdf', verifyToken,  quotationPDf)
 
+router.get('/getCaracolor/:model_id', verifyToken,   getCaracolor)
 
 
 

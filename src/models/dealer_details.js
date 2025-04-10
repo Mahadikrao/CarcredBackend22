@@ -21,6 +21,12 @@ const DealerDetails = sequelize.define("dealer_details", {
     type: DataTypes.STRING(48),
     allowNull: false,
   },
+
+  brand_id: {
+    type: DataTypes.INTEGER(16),
+    allowNull: false,
+  },
+  
   company_name: {
     type: DataTypes.STRING(32),
     allowNull: false,

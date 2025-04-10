@@ -88,9 +88,9 @@ export const createLoanDetail = async (req, res) => {
 
     const transaction = await sequelize.transaction();
 
-    const uniqueId = await generateUniqueEnquiryId("EMCPL")
+    const uniqueId = await generateUniqueEnquiryId(`E${req.user.prefix}`)
 
-    const uniqueIdloneid = await generateUniqueEnquiryIdlone("LNMCPL")
+     const uniqueIdloneid = await generateUniqueEnquiryIdlone(`LM${req.user.prefix}`)
 
     
 
@@ -241,19 +241,7 @@ export const createLoanDetail = async (req, res) => {
       console.log(req.user)
 
 
-    // if (!first_name || !last_name || !mobile || !loan_id) {
-    //   return res
-    //     .status(400)
-    //     .json({
-    //       message: "Title, First Name, Last Name, and Mobile Number are required.",
-    //     });
-    // }
-
-    // if (!loanData.loan_id || !loanData.dealer_id || !loanData.branch_id) {
-    //   return res.status(400).json({ message: 'Missing required fields' });
-    // }
-
-    // Create Enquiry
+  
     const enquiry = await LeadEnquiry.create({
       ...data,
       name_prefix,

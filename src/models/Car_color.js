@@ -9,8 +9,8 @@ const car_color = sequelize.define("car_color", {
       primaryKey: true,
       allowNull: false,
     },
-    dealer_id: {
-      type: DataTypes.INTEGER,
+    brand_id: {
+      type: DataTypes.INTEGER(16),
       allowNull: false,
     },
     model_id: {

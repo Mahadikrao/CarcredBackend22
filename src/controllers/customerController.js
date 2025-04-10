@@ -16,25 +16,54 @@ import { sequelizedbconnection } from "../services/sequelizedbcon.js";
 import { users_aadhaar } from '../utils/DemoAadhardata.js';
 import VinDetails from '../models/Vindetails.js';
 import User from '../models/User.js';
+import car_color from '../models/Modelcolor.js';
 
 
 const sequelize = sequelizedbconnection();
 
 
 
-const cars = [
-  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
-  { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+// const cars = [
+//   { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ELECTRIC BLUE", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
+//   { color: "ICE COOL WHITE + MYSTERY BLACK ROOF", image: "https://demo.carcred.co.in/assets/image/KIGER.png" },
 
-];
+// ];
 
 
+const baseUrl  = `https://demo.carcred.co.in/`
+
+export const getColorsByModelId = async (model_id) => {
+  try {
+    
+    const colors = await car_color.findAll({
+      where: {
+        model_id: model_id  
+      }
+    });
+
+
+    if (colors.length === 0) {
+      return [];
+    }
+
+
+
+    return colors.map((car) => ({
+      image: `${baseUrl}${car.model_image.replace(/\.\.\//g, "")}` ,
+      color: car.color_name
+    }));
+
+  } catch (error) {
+    console.error("Error fetching colors by model_id:", error);
+    throw new Error("Unable to fetch colors");
+  }
+};
 
 
 
@@ -52,28 +81,31 @@ const downloadImage = async (url, filename) => {
 
 
 
-export async function generateUniqueEnquiryId() {
 
+
+export async function generateUniqueEnquiryId(dealerId, prefix = "ENQMCPL") {
   const lastQuotation = await Enquiry.findOne({
     attributes: ["enquiry_id"],
+    where: { dealer_id: dealerId },
     order: [["enquiry_id", "DESC"]],
   });
 
+ 
 
+  console.log(lastQuotation?.enquiry_id);
   let nextNumber = 1; // Default if no records exist
 
   if (lastQuotation && lastQuotation.enquiry_id) {
-
-
-
-    const lastNumber = parseInt(lastQuotation.enquiry_id.replace("ENQMCPL", ""), 10);
-
-
+    const lastNumber = parseInt(
+      lastQuotation.enquiry_id.replace(prefix, ""),
+      10
+    );
+    console.log(lastNumber);
     nextNumber = lastNumber + 1;
   }
 
-  // Format the new ID as EMCPL00000001
-  const newEnquiryId = `ENQMCPL${nextNumber.toString().padStart(8, "0")}`;
+  // Format the new ID with the dynamic prefix
+  const newEnquiryId = `${prefix}${nextNumber.toString().padStart(8, "0")}`;
   return newEnquiryId;
 }
 
@@ -131,6 +163,26 @@ export async function generateQuotationPDF(Data) {
 
   const tempDir = "temp";
   fs.mkdirSync(tempDir, { recursive: true });
+
+  const cars  = await getColorsByModelId(Data.model_id)
+ 
+
+
+  for (let i = 0; i < cars.length; i++) {
+    const imageUrl = cars[i].image;
+    const imageColor = cars[i].color;
+    
+    // Construct the filename based on the color name (sanitize for filesystem)
+    const filename = path.join(tempDir, `car_${i}.png`);
+
+    // Download the image and save it
+   
+    await downloadImage(imageUrl, filename);
+  }
+
+  
+ 
+    
 
 
   const outputPath = path.join("outputs", Data.Pip_Name);
@@ -298,7 +350,7 @@ export async function generateQuotationPDF(Data) {
       cellHeight = imgHeight + 35; // Extra space for text
 
     // Loop through the cars array
-    for (let i = 0; i < cars.length; i++) {
+    for (let i = 0; i < 8 && i < cars.length; i++) {
       // Move to the next row when reaching the column limit
       if (i % columns === 0 && i !== 0) {
         x = 26; // Reset x position
@@ -461,7 +513,14 @@ export const createEnquiry = async (req, res) => {
 
     const today = new Date().toISOString().split('T')[0];
 
-    const uniqueId = await generateUniqueEnquiryId()
+    console.log("user", req.user.prefix, req?.user?.dealer_id)
+
+   const uniqueId = await generateUniqueEnquiryId(req?.user?.dealer_id, `E${req?.user?.prefix}`)
+
+
+   
+
+
     const {
       title,
       first_name,
@@ -510,13 +569,19 @@ export const createEnquiry = async (req, res) => {
       final_on_road_price,
       temporary_registration,
       color_name,
-      source_remark,
+      source_remark, 
+      insurance_addon,
+      
 
 
 
     } = req.body;
     const data = req.body.CarAmounts;
+
+    
     const data2 = req.body;
+
+    console.log("req.body.CarAmounts", req.body)
 
 
     if (!first_name || !last_name || !mobile) {
@@ -567,7 +632,7 @@ export const createEnquiry = async (req, res) => {
       ex_showroom_price,
       registration_charge,
       insurance,
-      insurance_add,
+      
       tcs,
       essential_kit,
       handling,
@@ -581,8 +646,9 @@ export const createEnquiry = async (req, res) => {
       installation_charge,
       other_charge,
       charge_reason,
-      temporey_registration: temporary_registration,
-      final_on_road_price: on_road_price,
+      temporey_registration,
+      insurance_add, 
+    
       number_plate,
       cash_scheme,
       vin_discount,
@@ -1075,6 +1141,9 @@ export const generatePip = async (req, res) => {
 
 
     const { model_id, } = req.body; // Extract model_id from request body
+    console.log(req.body)
+
+
 
 
     const responseData = await car_detail.findAll({

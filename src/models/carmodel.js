@@ -11,8 +11,8 @@ const CarModel = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    dealer_id: {
-      type: DataTypes.INTEGER(8),
+    brand_id: {
+      type: DataTypes.INTEGER(16),
       allowNull: false,
     },
     name: {

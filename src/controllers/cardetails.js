@@ -3,6 +3,7 @@ import car_detail from "../models/Car_verient.js";
 import CarModel from "../models/carmodel.js";
 import Model from "../models/carmodel.js";
 import CarVariant from "../models/CarVariant.js";
+import DealerDetails from "../models/dealer_details.js";
 
 import cloudinary from "../services/Cloudinary.js";
 
@@ -101,8 +102,10 @@ export const createCarVariant = async (req, res) => {
 export const getCarmodel = async (req, res) => { 
     try {
        const dealrid =  req.user.dealer_id; 
-    
-        const modelExists = await Model.findAll({ where: { dealer_id: dealrid  } });
+
+        const  brand = await DealerDetails.findOne({ where: { dealer_id: dealrid  } })
+       
+        const modelExists = await Model.findAll({ where: { brand_id: brand?.brand_id } });
 
         if (!modelExists) {
             return res.status(404).json({ message: "Car model not found" });
@@ -118,7 +121,8 @@ export const getCarmodel = async (req, res) => {
 
 export const getCarColor = async (req, res) => { 
     try {
-          const {model_id}= req.body; 
+        const {model_id}= req.body; 
+          console.log("model_id", model_id)
         const modelExists = await car_color.findAll({ where: { model_id} });
 
         if (!modelExists) {
@@ -190,14 +194,19 @@ export const modelvarientdetails = async (req, res) => {
 export const modelTypes = async (req, res) => { 
     try {
         const {model_id} = req.query; 
+       
     
         
 
  
 
         const modelExists = await  car_detail.findAll({ 
-            where: { model_id} 
+            where: { model_id} ,
+            attributes: ['fuel_type'],
+            distinct: true
         });
+
+        const fuelTypes = [...new Set(modelExists.map(car => car.fuel_type))];
        
         if (modelExists.length === 0) { 
             return res.status(404).json({ message: "Car model not found" });
@@ -205,7 +214,39 @@ export const modelTypes = async (req, res) => {
 
       
 
-        return res.status(200).json( modelExists );
+        return res.status(200).json(fuelTypes);
+    } catch (error) {
+        console.error("Error fetching car model:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+
+
+export const modelTypesTransmition = async (req, res) => { 
+    try {
+        const { model_id, fuel_type } = req.query; 
+          console.log("req",  req.query)
+        
+        // Query to get unique transmission_type for the given model_id and fuel_type
+        const modelExists = await car_detail.findAll({ 
+            where: { model_id, fuel_type },
+            attributes: ['transmission_type'],
+            
+        });
+
+        // If no models match, return 404
+        if (modelExists.length === 0) { 
+            return res.status(404).json({ message: "Car model not found" });
+        }
+
+        // Extract unique transmission types (no need to use Set here since `distinct: true` was used)
+        
+        const transmissionTypes= [...new Set(modelExists.map(car => car.transmission_type))];
+
+        return res.status(200).json(transmissionTypes);
+
     } catch (error) {
         console.error("Error fetching car model:", error);
         return res.status(500).json({ message: "Internal server error" });
